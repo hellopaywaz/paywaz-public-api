@@ -1,0 +1,22 @@
+
+---
+
+## Authentication
+- JWT-based access
+- Non-custodial wallet support
+- Merchant API Keys (coming soon)
+
+See: `docs/authentication.md`
+
+---
+
+## Example Request (Preview)
+```json
+{
+  "amount": "49.99",
+  "currency": "PZUSD",
+  "merchant_id": "your-merchant-id",
+  "metadata": {
+    "orderId": "12345"
+  }
+}
