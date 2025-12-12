@@ -2,36 +2,260 @@ openapi: 3.1.0
 
 info:
   title: Paywaz Public API
-  description: >
-    Paywaz Public API — zero-fee, crypto-native payment infrastructure.
-    This specification is the canonical source for SDK generation.
+  description: |
+    Paywaz Public API — the developer gateway into zero-fee, crypto-native payments.
+    Supports stablecoins, Solana-native settlement, and enterprise-grade webhooks.
   version: 0.1.0
 
 servers:
   - url: https://api.paywaz.com
+    description: Production
+
+security:
+  - ApiKeyAuth: []
 
 paths:
-  /health:
-    get:
-      operationId: getHealth
-      summary: Health check
-      description: Service liveness check
+  /payments:
+    post:
+      operationId: createPayment
+      summary: Create a payment
+      description: Initiates a zero-fee crypto or stablecoin payment
       tags:
-        - System
+        - Payments
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          style: simple
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePaymentRequest"
       responses:
-        "200":
-          description: API is healthy
+        "201":
+          description: Payment created
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - status
-                properties:
-                  status:
-                    type: string
-                    example: ok
+                $ref: "#/components/schemas/Payment"
+              examples:
+                example:
+                  value:
+                    id: "pay_01HZXQ9K8M8F4A"
+                    status: "pending"
+                    amount: "1000"
+                    currency: "USDC"
+                    destination: "wallet_abc123"
+                    createdAt: "2025-01-12T10:15:30Z"
+
+  /payments/{paymentId}:
+    get:
+      operationId: getPayment
+      summary: Retrieve a payment
+      description: Retrieve the current status and details of a payment
+      tags:
+        - Payments
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "pay_01HZXQ9K8M8F4A"
+      responses:
+        "200":
+          description: Payment retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "404":
+          description: Payment not found
+
+  /webhooks/payments:
+    post:
+      operationId: receivePaymentWebhook
+      summary: Receive payment webhook events
+      description: Receives asynchronous payment lifecycle events from Paywaz
+      tags:
+        - Webhooks
+      security: []   # Webhooks must NOT require API auth
+      parameters:
+        - name: Paywaz-Signature
+          in: header
+          required: true
+          style: simple
+          schema:
+            type: string
+          description: HMAC-SHA256 signature of the request payload
+        - name: Paywaz-Timestamp
+          in: header
+          required: true
+          style: simple
+          schema:
+            type: string
+          description: Unix timestamp (seconds) when the event was generated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookEvent"
+      responses:
+        "200":
+          description: Webhook processed successfully
+        "400":
+          description: Invalid payload or signature
+        "401":
+          description: Signature verification failed
 
 components:
-  schemas: {}
-  securitySchemes: {}
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+
+  schemas:
+    CreatePaymentRequest:
+      type: object
+      required:
+        - amount
+        - currency
+        - destination
+      properties:
+        amount:
+          type: string
+          description: Amount in smallest unit (e.g. cents, lamports)
+          example: "1000"
+        currency:
+          type: string
+          example: "USDC"
+        destination:
+          type: string
+          description: Destination wallet or account identifier
+        autoConvert:
+          type: boolean
+          default: false
+          description: Auto-convert incoming funds to Paywaz hedged stablecoin
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Merchant-defined metadata (order_id, customer_id, etc)
+
+    Payment:
+      type: object
+      required:
+        - id
+        - status
+        - amount
+        - currency
+        - createdAt
+      properties:
+        id:
+          type: string
+          example: "pay_01HZXQ9K8M8F4A"
+        status:
+          type: string
+          enum:
+            - pending
+            - confirmed
+            - settled
+            - failed
+        amount:
+          type: string
+        currency:
+          type: string
+        destination:
+          type: string
+        transactionHash:
+          type: string
+          nullable: true
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+
+    WebhookEvent:
+      type: object
+      required:
+        - id
+        - type
+        - eventVersion
+        - livemode
+        - createdAt
+        - data
+      properties:
+        id:
+          type: string
+          description: Unique webhook event ID
+          example: "evt_01HZXY9M8A3P9"
+        type:
+          type: string
+          enum:
+            - payment.pending
+            - payment.confirmed
+            - payment.settled
+            - payment.failed
+        eventVersion:
+          type: string
+          description: Webhook payload version
+          example: "2025-01-01"
+        livemode:
+          type: boolean
+          description: Indicates whether the event was generated in live mode
+        createdAt:
+          type: string
+          format: date-time
+        data:
+          type: object
+          required:
+            - payment
+          properties:
+            payment:
+              $ref: "#/components/schemas/Payment"
+
+import crypto from "crypto";
+
+export function verifyPaywazWebhook({
+  payload,
+  signature,
+  timestamp,
+  secret,
+}: {
+  payload: string;
+  signature: string;
+  timestamp: string;
+  secret: string;
+}) {
+  const signedPayload = `${timestamp}.${payload}`;
+
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(signedPayload)
+    .digest("hex");
+
+  const provided = signature.replace("v1=", "");
+
+  if (
+    !crypto.timingSafeEqual(
+      Buffer.from(expected),
+      Buffer.from(provided)
+    )
+  ) {
+    throw new Error("Invalid webhook signature");
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  if (Math.abs(now - Number(timestamp)) > 300) {
+    throw new Error("Webhook timestamp expired");
+  }
+
+  return true;
+}
