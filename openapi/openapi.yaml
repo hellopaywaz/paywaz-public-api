@@ -1,0 +1,3 @@
+brew install openapi-generator
+# or
+npm install @openapitools/openapi-generator-cli
