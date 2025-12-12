@@ -10,7 +10,27 @@ info:
 servers:
   - url: https://api.paywaz.com
 
-paths: {}
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Health check
+      description: Service liveness check
+      tags:
+        - System
+      responses:
+        "200":
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+                    example: ok
 
 components:
   schemas: {}
