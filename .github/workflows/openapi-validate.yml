@@ -2,9 +2,6 @@ name: OpenAPI Validation
 
 on:
   push:
-    paths:
-      - "openapi/**/*.yaml"
-      - "openapi/**/*.yml"
   pull_request:
 
 jobs:
