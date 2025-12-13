@@ -2,10 +2,10 @@ openapi: 3.1.0
 
 info:
   title: Paywaz Public API
+  version: 2025-01-01
   description: |
-    Paywaz Public API — the developer gateway into zero-fee, crypto-native payments.
-    Supports stablecoins, Solana-native settlement, and enterprise-grade webhooks.
-  version: 0.1.0
+    Paywaz Public API.
+    Versioned via the `Paywaz-Version` request header.
 
 servers:
   - url: https://api.paywaz.com
@@ -123,12 +123,16 @@ components:
         Format: `v1=<hex_digest>`
 
   parameters:
-    PaywazSignature:
-      name: Paywaz-Signature
-      in: header
-      required: true
-      schema:
-        type: string
+  PaywazVersion:
+    name: Paywaz-Version
+    in: header
+    required: false
+    schema:
+      type: string
+      example: "2025-01-01"
+    description: |
+      API version to use for this request.
+      Defaults to the account's pinned version if omitted.
 
     PaywazTimestamp:
       name: Paywaz-Timestamp
