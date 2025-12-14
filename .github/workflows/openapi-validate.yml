@@ -1,17 +1,36 @@
-- name: Locate OpenAPI file
-  run: |
-    if [ -f openapi/openapi.yaml ]; then
-      echo "OPENAPI_PATH=openapi/openapi.yaml" >> $GITHUB_ENV
-    elif [ -f openapi/openapi.yml ]; then
-      echo "OPENAPI_PATH=openapi/openapi.yml" >> $GITHUB_ENV
-    elif [ -f openapi.yaml ]; then
-      echo "OPENAPI_PATH=openapi.yaml" >> $GITHUB_ENV
-    else
-      echo "❌ Could not find openapi file"
-      ls -la
-      ls -la openapi || true
-      exit 1
-    fi
+name: Validate OpenAPI
 
-- name: Lint OpenAPI
-  run: npx @redocly/cli@latest lint $OPENAPI_PATH
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Locate OpenAPI file
+        run: |
+          if [ -f openapi/openapi.yaml ]; then
+            echo "OPENAPI_PATH=openapi/openapi.yaml" >> $GITHUB_ENV
+          elif [ -f openapi/openapi.yml ]; then
+            echo "OPENAPI_PATH=openapi/openapi.yml" >> $GITHUB_ENV
+          elif [ -f openapi.yaml ]; then
+            echo "OPENAPI_PATH=openapi.yaml" >> $GITHUB_ENV
+          elif [ -f openapi.yml ]; then
+            echo "OPENAPI_PATH=openapi.yml" >> $GITHUB_ENV
+          else
+            echo "❌ Could not find OpenAPI file"
+            ls -la
+            ls -la openapi || true
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Lint OpenAPI
+        run: npx -y @redocly/cli@latest lint $OPENAPI_PATH
