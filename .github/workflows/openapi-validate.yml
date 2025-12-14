@@ -1,17 +1,17 @@
-name: Validate OpenAPI
+- name: Locate OpenAPI file
+  run: |
+    if [ -f openapi/openapi.yaml ]; then
+      echo "OPENAPI_PATH=openapi/openapi.yaml" >> $GITHUB_ENV
+    elif [ -f openapi/openapi.yml ]; then
+      echo "OPENAPI_PATH=openapi/openapi.yml" >> $GITHUB_ENV
+    elif [ -f openapi.yaml ]; then
+      echo "OPENAPI_PATH=openapi.yaml" >> $GITHUB_ENV
+    else
+      echo "❌ Could not find openapi file"
+      ls -la
+      ls -la openapi || true
+      exit 1
+    fi
 
-on:
-  workflow_dispatch:
-  push:
-    branches: [main]
-  pull_request:
-
-jobs:
-  validate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - run: npx @redocly/cli@latest lint openapi/openapi.yaml
+- name: Lint OpenAPI
+  run: npx @redocly/cli@latest lint $OPENAPI_PATH
