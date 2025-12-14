@@ -1,41 +1,57 @@
-# Paywaz API Versioning & Deprecation Policy
+# Paywaz API Versioning & Compatibility
 
-## Versioning Model
+## Version format
+Paywaz uses date-based API versions: `YYYY-MM-DD` (example: `2025-01-01`).
 
-Paywaz uses date-based API versions in the format:
+## Request versioning
+Clients SHOULD send:
 
-YYYY-MM-DD
+`Paywaz-Version: YYYY-MM-DD`
 
-Example:
-2025-01-01
+If omitted:
+- The API serves the **default stable version** (documented in release notes).
+- The response MUST include the served version header.
 
-API versions are supplied via the `Paywaz-Version` HTTP header.
+## Response headers
+Every response includes:
 
-If no version is supplied, the account's default pinned version is used.
+- `Paywaz-Version: YYYY-MM-DD` (the version actually used to process the request)
 
----
+When a version is being deprecated, responses MAY include:
 
-## Backward Compatibility
+- `Deprecation: true`
+- `Sunset: <RFC 1123 date>` (the date the version stops being served)
+- `Link: <...>; rel="deprecation"` (points to the deprecation policy)
 
-- All API versions are immutable once released
-- New fields may be added at any time
-- Existing fields will never change meaning within a version
+## Backwards compatibility rules
+Within the same `Paywaz-Version`, changes are **additive only**:
+- ✅ Add new fields (optional)
+- ✅ Add new endpoints
+- ✅ Add new event types
+- ✅ Expand enum values (clients must be tolerant)
 
----
+Breaking changes require a **new Paywaz-Version**:
+- ❌ Removing/renaming fields
+- ❌ Changing meaning or required-ness of fields
+- ❌ Changing signature format
+- ❌ Changing webhook payload structure in a non-additive way
 
-## Deprecation Policy
+## Deprecation policy
+- Paywaz announces deprecations with at least **90 days notice**
+- Deprecated versions continue to work until the `Sunset` date
+- After sunset, requests for that version return an error indicating upgrade path
 
-When an API feature is deprecated:
+## Webhook versioning
+Webhook payloads include:
+- `event_version` (date-based, same format)
+- `type`, `id`, `created`, `data`
 
-1. The feature is marked as deprecated in OpenAPI
-2. A `Paywaz-Deprecation` response header is returned
-3. The feature remains available for **at least 6 months**
-4. Removal occurs only in a new API version
+Rules:
+- Within an `event_version`, payload changes are additive only
+- Breaking webhook changes require a new `event_version`
+- Signature verification algorithm remains stable across versions whenever possible
 
----
-
-## Webhooks
-
-Webhooks are versioned independently using `eventVersion`.
-
-Webhook schemas will never change without a version bump.
+## Recommended client behavior
+- Always pin `Paywaz-Version`
+- Always implement tolerant parsing (ignore unknown fields)
+- Always verify webhook signatures using the raw request body
