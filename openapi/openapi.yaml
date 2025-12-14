@@ -6,6 +6,9 @@ info:
   description: |
     Paywaz Public API.
     Versioned via the `Paywaz-Version` request header.
+  license:
+    name: Paywaz License
+    url: https://github.com/hellopaywaz/paywaz-license
 
 servers:
   - url: https://api.paywaz.com
@@ -58,6 +61,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/Payment"
 
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
   /payments/{paymentId}:
     get:
       operationId: getPayment
@@ -86,6 +102,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Payment"
+
         "404":
           description: Payment not found
           headers:
@@ -97,6 +114,19 @@ paths:
               $ref: "#/components/headers/Sunset"
             Link:
               $ref: "#/components/headers/Link"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
 
   /webhooks/payments:
     post:
@@ -136,8 +166,16 @@ paths:
           description: Webhook processed successfully
         "400":
           description: Invalid payload or signature
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "401":
           description: Signature verification failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
 components:
   securitySchemes:
@@ -157,7 +195,7 @@ components:
         example: "2025-01-01"
 
     Deprecation:
-      description: Indicates this API version is deprecated (header value is a string).
+      description: Indicates this API version is deprecated.
       schema:
         type: string
         example: "true"
@@ -206,7 +244,89 @@ components:
         HMAC-SHA256 webhook signature.
         Format: `v1=<hex_digest>`
 
+  responses:
+    BadRequest:
+      description: Invalid request parameters.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: "invalid_request"
+            message: "amount must be a decimal string"
+            requestId: "req_01HZXY..."
+
+    Unauthorized:
+      description: Missing or invalid API key.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: "unauthorized"
+            message: "Missing or invalid API key"
+            requestId: "req_01HZXY..."
+
+    Forbidden:
+      description: Not permitted for this API key or account.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: "forbidden"
+            message: "You do not have access to this resource"
+            requestId: "req_01HZXY..."
+
+    Conflict:
+      description: Conflict (often idempotency collision).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: "conflict"
+            message: "Idempotency-Key was already used with different parameters"
+            requestId: "req_01HZXY..."
+
+    RateLimited:
+      description: Too many requests.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: "rate_limited"
+            message: "Too many requests, please retry later"
+            requestId: "req_01HZXY..."
+
+    InternalError:
+      description: Unexpected server error.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: "internal_error"
+            message: "An unexpected error occurred"
+            requestId: "req_01HZXY..."
+
   schemas:
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          example: "invalid_request"
+        message:
+          type: string
+          example: "amount must be a decimal string"
+        requestId:
+          type: string
+          nullable: true
+          example: "req_01HZXY..."
+
     CreatePaymentRequest:
       type: object
       required: [amount, currency, destination]
