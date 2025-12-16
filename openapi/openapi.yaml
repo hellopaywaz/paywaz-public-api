@@ -6,10 +6,9 @@ info:
   description: >
     Paywaz Public API — the developer gateway into zero-fee, crypto-native payments.
     Supports stablecoins, Solana-native settlement, and enterprise-grade webhooks.
-
-license:
-  name: MIT
-  url: https://opensource.org/licenses/MIT
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
 
 servers:
   - url: https://api.paywaz.com
@@ -231,12 +230,7 @@ components:
     PaymentStatus:
       type: string
       description: Current payment status.
-      enum:
-        - created
-        - pending
-        - settled
-        - failed
-        - canceled
+      enum: [created, pending, settled, failed, canceled]
 
     Money:
       type: object
@@ -254,39 +248,38 @@ components:
           pattern: "^[0-9]+(\\.[0-9]{1,8})?$"
 
     ErrorResponse:
-  type: object
-  additionalProperties: false
-  required: [error]
-  properties:
-    error:
-      $ref: "#/components/schemas/Error"
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          $ref: "#/components/schemas/Error"
 
-Error:
-  type: object
-  additionalProperties: false
-  required: [code, message]
-  properties:
-    code:
-      type: string
-      description: Machine-readable error code.
-    message:
-      type: string
-      description: Human-readable error message.
-    details:
-      type: array
-      description: Optional field-level validation issues.
-      items:
-        $ref: "#/components/schemas/ErrorDetail"
+    Error:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code.
+        message:
+          type: string
+          description: Human-readable error message.
+        details:
+          type: array
+          description: Optional field-level validation issues.
+          items:
+            $ref: "#/components/schemas/ErrorDetail"
 
-ErrorDetail:
-  type: object
-  additionalProperties: false
-  required: [issue]
-  properties:
-    field:
-      type: string
-      description: Dot-path to the invalid field (if applicable).
-    issue:
-      type: string
-      description: Description of the validation problem.
-
+    ErrorDetail:
+      type: object
+      additionalProperties: false
+      required: [issue]
+      properties:
+        field:
+          type: string
+          description: Dot-path to the invalid field (if applicable).
+        issue:
+          type: string
+          description: Description of the validation problem.
