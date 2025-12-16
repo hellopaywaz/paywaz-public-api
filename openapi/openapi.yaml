@@ -2,323 +2,280 @@ openapi: 3.1.0
 
 info:
   title: Paywaz Public API
-  version: 2025-01-01
-  description: |
-    Paywaz Public API.
-    Versioned via the `Paywaz-Version` request header.
-  license:
-    name: Paywaz License
-    url: https://github.com/hellopaywaz/paywaz-license
+  version: 0.1.0
+  description: >
+    Paywaz Public API — the developer gateway into zero-fee, crypto-native payments.
+    Supports stablecoins, Solana-native settlement, and enterprise-grade webhooks.
 
 servers:
   - url: https://api.paywaz.com
     description: Production
 
-security:
-  - ApiKeyAuth: []
-
 tags:
   - name: Payments
-  - name: Webhooks
+    description: Create and query payments.
+
+security:
+  - ApiKeyAuth: []
 
 paths:
   /payments:
     post:
+      tags: [Payments]
       operationId: createPayment
       summary: Create a payment
-      description: Initiates a zero-fee crypto or stablecoin payment.
-      tags: [Payments]
+      description: Create a new payment intent and return its identifier and initial status.
       parameters:
-        - $ref: "#/components/parameters/PaywazVersion"
-        - name: Idempotency-Key
-          in: header
-          required: true
-          schema:
-            type: string
-          description: Idempotency key for safely retrying create requests.
+        - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreatePaymentRequest"
+        $ref: "#/components/requestBodies/PaymentCreateRequest"
       responses:
         "201":
           description: Payment created
           headers:
-            Paywaz-Version:
-              $ref: "#/components/headers/PaywazVersionServed"
+            X-Request-Id:
+              $ref: "#/components/headers/XRequestId"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Payment"
+              examples:
+                created:
+                  value:
+                    id: "pay_01J0XQ8ZK6VZQ8FQ1YB9D9G9K1"
+                    status: "created"
+                    amount:
+                      currency: "USD"
+                      value: "49.99"
+                    createdAt: "2025-12-16T19:15:31Z"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /payments/{paymentId}:
     get:
-      operationId: getPayment
-      summary: Retrieve a payment
       tags: [Payments]
+      operationId: getPayment
+      summary: Get a payment
+      description: Fetch a payment by its identifier.
       parameters:
-        - $ref: "#/components/parameters/PaywazVersion"
-        - name: paymentId
-          in: path
-          required: true
-          schema:
-            type: string
+        - $ref: "#/components/parameters/PaymentId"
       responses:
         "200":
           description: Payment retrieved
           headers:
-            Paywaz-Version:
-              $ref: "#/components/headers/PaywazVersionServed"
+            X-Request-Id:
+              $ref: "#/components/headers/XRequestId"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Payment"
+              examples:
+                found:
+                  value:
+                    id: "pay_01J0XQ8ZK6VZQ8FQ1YB9D9G9K1"
+                    status: "created"
+                    amount:
+                      currency: "USD"
+                      value: "49.99"
+                    createdAt: "2025-12-16T19:15:31Z"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
-          description: Payment not found
-          headers:
-            Paywaz-Version:
-              $ref: "#/components/headers/PaywazVersionServed"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "429":
-          $ref: "#/components/responses/TooManyRequests"
-        "500":
-          $ref: "#/components/responses/InternalError"
-
-  /webhooks/payments:
-    post:
-      operationId: receivePaymentWebhook
-      summary: Receive payment webhook events
-      description: |
-        Receives asynchronous payment lifecycle events from Paywaz.
-
-        ### Webhook Signature Verification
-        Paywaz signs webhook events using HMAC-SHA256.
-
-        **Headers**
-        - `Paywaz-Timestamp: <unix_seconds>`
-        - `Paywaz-Signature: v1=<hex_signature>`
-
-        **Signing algorithm**
-        signature = HMAC_SHA256(secret, `${timestamp}.${raw_body}`)
-
-        **Replay protection**
-        Reject if |now − timestamp| > 300 seconds.
-      tags: [Webhooks]
-      security: [] # public endpoint; authenticity verified via signature
-      parameters:
-        - $ref: "#/components/parameters/PaywazTimestamp"
-        - $ref: "#/components/parameters/PaywazSignature"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/WebhookEvent"
-      responses:
-        "200":
-          description: Webhook processed successfully
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
+          $ref: "#/components/responses/NotFound"
 
 components:
   securitySchemes:
     ApiKeyAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: APIKey
-      description: "Use `Authorization: Bearer <api_key>`."
-
-  headers:
-    PaywazVersionServed:
-      description: API version used to process this request.
-      schema:
-        type: string
-        example: "2025-01-01"
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Your Paywaz API key.
 
   parameters:
-    PaywazVersion:
-      name: Paywaz-Version
+    PaymentId:
+      name: paymentId
+      in: path
+      required: true
+      description: The payment identifier.
+      schema:
+        type: string
+        minLength: 1
+
+    IdempotencyKey:
+      name: Idempotency-Key
       in: header
       required: false
+      description: >
+        Optional idempotency key to safely retry requests. Reusing the same key with the
+        same request body should return the same result.
       schema:
         type: string
-        example: "2025-01-01"
-      description: |
-        API version to use for this request.
-        Defaults to the account's pinned version if omitted.
+        minLength: 1
+        maxLength: 128
 
-    PaywazTimestamp:
-      name: Paywaz-Timestamp
-      in: header
-      required: true
+  headers:
+    XRequestId:
+      description: Unique request identifier for tracing/support.
       schema:
         type: string
-        example: "1734183123"
-      description: Unix timestamp in seconds.
 
-    PaywazSignature:
-      name: Paywaz-Signature
-      in: header
+  requestBodies:
+    PaymentCreateRequest:
       required: true
-      schema:
-        type: string
-        example: "v1=0123abcd...deadbeef"
-      description: |
-        HMAC-SHA256 webhook signature.
-        Format: `v1=<hex_digest>`
+      description: Create payment request payload.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/PaymentCreateRequest"
+          examples:
+            basic:
+              value:
+                amount:
+                  currency: "USD"
+                  value: "49.99"
 
   responses:
     BadRequest:
-      description: Bad request
+      description: Bad request (validation error).
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/XRequestId"
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            invalid:
+              value:
+                error:
+                  code: "invalid_request"
+                  message: "Request validation failed."
+                  details:
+                    - field: "amount.value"
+                      issue: "Must be a positive decimal string."
+
     Unauthorized:
-      description: Unauthorized
+      description: Authentication failed.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/XRequestId"
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
-    TooManyRequests:
-      description: Too many requests
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            missingKey:
+              value:
+                error:
+                  code: "unauthorized"
+                  message: "Missing or invalid API key."
+
+    NotFound:
+      description: Resource not found.
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/XRequestId"
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
-    InternalError:
-      description: Internal server error
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            notFound:
+              value:
+                error:
+                  code: "not_found"
+                  message: "Payment not found."
 
   schemas:
-    CreatePaymentRequest:
+    PaymentCreateRequest:
       type: object
-      required: [amount, currency, destination]
+      additionalProperties: false
+      required: [amount]
       properties:
         amount:
-          type: string
-          description: Amount as a decimal string (e.g. "49.99").
-          example: "49.99"
-        currency:
-          type: string
-          description: ISO currency or token symbol (e.g. "USD", "USDC", "PZUSD").
-          example: "PZUSD"
-        destination:
-          type: string
-          description: Destination identifier (wallet address, account ID, or merchant destination).
-          example: "merchant_wallet_or_destination_id"
-        autoConvert:
-          type: boolean
-          default: false
-          description: If true, Paywaz may auto-convert to a preferred stablecoin.
-        metadata:
-          type: object
-          additionalProperties: true
-          description: Arbitrary key/value metadata.
-          example:
-            orderId: "12345"
+          $ref: "#/components/schemas/Money"
 
     Payment:
       type: object
-      required: [id, status, amount, currency, destination, createdAt]
+      additionalProperties: false
+      required: [id, status, amount, createdAt]
       properties:
         id:
           type: string
-          example: "pay_01HZXY9M8A3P9"
+          description: Paywaz payment identifier.
         status:
-          type: string
-          enum: [pending, confirmed, settled, failed]
-          example: "pending"
+          $ref: "#/components/schemas/PaymentStatus"
         amount:
+          $ref: "#/components/schemas/Money"
+        createdAt:
           type: string
-          example: "49.99"
+          format: date-time
+          description: ISO 8601 creation timestamp.
+
+    PaymentStatus:
+      type: string
+      description: Current payment status.
+      enum:
+        - created
+        - pending
+        - settled
+        - failed
+        - canceled
+
+    Money:
+      type: object
+      additionalProperties: false
+      required: [currency, value]
+      properties:
         currency:
           type: string
-          example: "PZUSD"
-        destination:
+          description: ISO 4217 currency code.
+          minLength: 3
+          maxLength: 3
+        value:
           type: string
-          example: "merchant_wallet_or_destination_id"
-        transactionHash:
-          description: Blockchain transaction hash if available.
-          type: [string, "null"]
-          example: null
-        metadata:
-          type: object
-          additionalProperties: true
-          example:
-            orderId: "12345"
-        createdAt:
-          type: string
-          format: date-time
-          example: "2025-01-01T12:00:00Z"
+          description: Decimal string amount (e.g. "49.99").
+          pattern: "^[0-9]+(\\.[0-9]{1,8})?$"
 
-    WebhookEvent:
+    ErrorResponse:
       type: object
-      required: [id, type, eventVersion, livemode, createdAt, data]
-      properties:
-        id:
-          type: string
-          example: "evt_01HZXY9M8A3P9"
-        type:
-          type: string
-          enum:
-            - payment.pending
-            - payment.confirmed
-            - payment.settled
-            - payment.failed
-        eventVersion:
-          type: string
-          example: "2025-01-01"
-        livemode:
-          type: boolean
-          example: true
-        createdAt:
-          type: string
-          format: date-time
-          example: "2025-01-01T12:00:05Z"
-        data:
-          type: object
-          required: [payment]
-          properties:
-            payment:
-              $ref: "#/components/schemas/Payment"
-
-    Error:
-      type: object
+      additionalProperties: false
       required: [error]
       properties:
         error:
-          type: object
-          required: [type, message]
-          properties:
-            type:
-              type: string
-              example: "invalid_request"
-            message:
-              type: string
-              example: "Missing required field: destination"
-            requestId:
-              type: [string, "null"]
-              example: "req_01HZXY..."
+          $ref: "#/components/schemas/Error"
+
+    Error:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code.
+        message:
+          type: string
+          description: Human-readable error message.
+        details:
+          type: array
+          description: Optional field-level validation issues.
+          items:
+            $ref: "#/components/schemas/ErrorDetail"
+
+    ErrorDetail:
+      type: object
+      additionalProperties: false
+      required: [issue]
+      properties:
+        field:
+          type: string
+          description: Dot-path to the invalid field (if applicable).
+        issue:
+          type: string
+          description: Description of the validation problem.
