@@ -1,6 +1,7 @@
 name: OpenAPI Lint
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - "openapi.yaml"
@@ -24,4 +25,4 @@ jobs:
       - name: Lint OpenAPI (Redocly)
         run: |
           if [ -f "openapi.yaml" ]; then SPEC="openapi.yaml"; elif [ -f "openapi.yml" ]; then SPEC="openapi.yml"; else echo "No openapi.yaml or openapi.yml found" && exit 1; fi
-          npx -y @redocly/cli@latest lint "$SPEC"
+          npx -y @redocly/cli@1.29.0 lint "$SPEC"
