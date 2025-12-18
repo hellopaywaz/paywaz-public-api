@@ -3,7 +3,7 @@ extends:
 
 apis:
   paywaz@v1:
-    root: ./openapi.yaml
+    root: ./openapi/openapi.yaml
 
 rules:
   no-unused-components: error

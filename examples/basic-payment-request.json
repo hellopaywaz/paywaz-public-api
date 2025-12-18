@@ -1,20 +1,20 @@
-Example: Create a Payment Request (REST)
-
-POST /api/v1/payments
 {
-“amount”: “49.00”,
-“currency”: “USD”,
-“settlement”: “stablecoin”,
-“autoConvert”: true,
-“callbackUrl”: “https://merchant.com/notify”
-}
-
-Example: Webhook Response
-
-{
-“event”: “payment.confirmed”,
-“tx”: “5f82as9d0f…”,
-“amount”: “49.00”,
-“network”: “solana”,
-“status”: “settled”
+  "createPaymentRequest": {
+    "method": "POST",
+    "path": "/api/v1/payments",
+    "body": {
+      "amount": "49.00",
+      "currency": "USD",
+      "settlement": "stablecoin",
+      "autoConvert": true,
+      "callbackUrl": "https://merchant.com/notify"
+    }
+  },
+  "webhookExample": {
+    "event": "payment.confirmed",
+    "tx": "5f82as9d0f...",
+    "amount": "49.00",
+    "network": "solana",
+    "status": "settled"
+  }
 }

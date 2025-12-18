@@ -30,7 +30,8 @@ Public OpenAPI specification for the Paywaz API.
 Requires Node.js 20+.
 
 ```bash
-npx -y @redocly/cli@latest lint openapi.yaml
+npx -y @redocly/cli@latest lint openapi/openapi.yaml
+```
 
 
 ## API Specification

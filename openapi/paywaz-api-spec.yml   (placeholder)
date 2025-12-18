@@ -1,16 +1,15 @@
+# Paywaz API Spec (Placeholder)
 
----
+This file holds early planning notes for the public API schema. Production-ready endpoints will be documented in `openapi/openapi.yaml` once available.
 
-## Authentication
+## Authentication (preview)
 - JWT-based access
 - Non-custodial wallet support
 - Merchant API Keys (coming soon)
 
-See: `docs/authentication.md`
+For more details, see `docs/authentication.md`.
 
----
-
-## Example Request (Preview)
+## Example request (preview)
 ```json
 {
   "amount": "49.99",
@@ -20,3 +19,4 @@ See: `docs/authentication.md`
     "orderId": "12345"
   }
 }
+```
