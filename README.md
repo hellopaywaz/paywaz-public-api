@@ -26,12 +26,25 @@ Public OpenAPI specification for the Paywaz API.
 - `openapi.yaml` — OpenAPI 3.1 spec
 - `redocly.yaml` — Redocly lint config
 
-## Lint (locally)
-Requires Node.js 20+.
+## Local setup
+Requires Node.js **20+**.
 
 ```bash
-npx -y @redocly/cli@latest lint openapi/openapi.yaml
+npm ci
 ```
+
+### Golden commands
+These commands are wired into CI and should be used locally:
+
+| Purpose      | Command                              |
+| ------------ | ------------------------------------ |
+| Lint / tests | `npm test` (runs Redocly lint)       |
+| Lint only    | `npm run lint`                       |
+| Bundle spec  | `npm run build` (outputs to `dist/`) |
+| Preview docs | `npm start` (Redocly preview on 8080)|
+
+> Tip: `npm start` runs `redocly preview-docs` and binds to `0.0.0.0:8080` so you can view the docs locally.
+> These commands invoke Redocly via `npx` and will download the pinned CLI version if it is not already cached.
 
 
 ## API Specification
@@ -39,4 +52,3 @@ An OpenAPI 3.0 specification will be published here as endpoints become publicly
 
 Current placeholder:
 Paywaz-Version: 2025-01-01
-

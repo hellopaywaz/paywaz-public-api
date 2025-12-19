@@ -1,0 +1,16 @@
+{
+  "name": "paywaz-public-api",
+  "version": "0.1.0",
+  "description": "Public OpenAPI specification for the Paywaz API.",
+  "private": true,
+  "license": "SEE LICENSE IN paywaz-license",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "lint": "npx -y @redocly/cli@1.29.0 lint openapi/openapi.yaml",
+    "test": "npm run lint",
+    "build": "mkdir -p dist && npx -y @redocly/cli@1.29.0 bundle openapi/openapi.yaml -o dist/openapi.bundle.yaml",
+    "start": "npx -y @redocly/cli@1.29.0 preview-docs openapi/openapi.yaml --host 0.0.0.0 --port 8080"
+  }
+}

@@ -4,33 +4,29 @@ on:
   push:
     branches: [main]
   pull_request:
+    paths:
+      - "openapi/**"
+      - "redocly.yaml"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/openapi-validate.yml"
 
 jobs:
-  lint:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Locate OpenAPI file
-        run: |
-          if [ -f openapi/openapi.yaml ]; then
-            echo "OPENAPI_PATH=openapi/openapi.yaml" >> $GITHUB_ENV
-          elif [ -f openapi/openapi.yml ]; then
-            echo "OPENAPI_PATH=openapi/openapi.yml" >> $GITHUB_ENV
-          elif [ -f openapi.yaml ]; then
-            echo "OPENAPI_PATH=openapi.yaml" >> $GITHUB_ENV
-          elif [ -f openapi.yml ]; then
-            echo "OPENAPI_PATH=openapi.yml" >> $GITHUB_ENV
-          else
-            echo "❌ Could not find OpenAPI file"
-            ls -la
-            ls -la openapi || true
-            exit 1
-          fi
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
 
-      - name: Lint OpenAPI
-        run: npx -y @redocly/cli@latest lint $OPENAPI_PATH
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build bundled OpenAPI artifact
+        run: npm run build

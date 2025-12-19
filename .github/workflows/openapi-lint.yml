@@ -4,16 +4,18 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - "openapi.yaml"
-      - "openapi.yml"
+      - "openapi/**"
       - "redocly.yaml"
+      - "package.json"
+      - "package-lock.json"
       - ".github/workflows/openapi-lint.yml"
   push:
     branches: [ "main" ]
     paths:
-      - "openapi.yaml"
-      - "openapi.yml"
+      - "openapi/**"
       - "redocly.yaml"
+      - "package.json"
+      - "package-lock.json"
 
 jobs:
   lint:
@@ -22,7 +24,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
       - name: Lint OpenAPI (Redocly)
-        run: |
-          if [ -f "openapi.yaml" ]; then SPEC="openapi.yaml"; elif [ -f "openapi.yml" ]; then SPEC="openapi.yml"; else echo "No openapi.yaml or openapi.yml found" && exit 1; fi
-          npx -y @redocly/cli@1.29.0 lint "$SPEC"
+        run: npm run lint
