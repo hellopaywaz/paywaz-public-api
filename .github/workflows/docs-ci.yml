@@ -9,5 +9,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Docs check
-        run: echo "Docs OK"
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        env:
+          NODE_ENV: development
+          NPM_CONFIG_PRODUCTION: "false"
+          npm_config_production: "false"
+        run: npm ci
+      - name: Verify Redocly availability
+        run: ./node_modules/.bin/redocly --version
+      - name: Build docs bundle
+        run: npm run build
