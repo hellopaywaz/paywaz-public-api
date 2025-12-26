@@ -27,7 +27,7 @@ Public OpenAPI specification for the Paywaz API.
 - `redocly.yaml` — Redocly lint config
 
 ## Local setup
-Requires Node.js **20+**.
+Requires Node.js **20+** (see `.nvmrc`).
 
 ```bash
 npm ci
@@ -44,7 +44,7 @@ These commands are wired into CI and should be used locally:
 | Preview docs | `npm start` (Redocly preview on 8080)|
 
 > Tip: `npm start` runs `redocly preview-docs` and binds to `0.0.0.0:8080` so you can view the docs locally.
-> These commands invoke Redocly via `npx` and will download the pinned CLI version if it is not already cached.
+> Install via `npm ci` to use the pinned Redocly CLI bundled in `node_modules`.
 
 
 ## API Specification
