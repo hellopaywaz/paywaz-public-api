@@ -25,7 +25,11 @@ jobs:
       - name: Install dependencies
         env:
           NODE_ENV: development
-        run: npm ci --include=dev
+          NPM_CONFIG_PRODUCTION: "false"
+          npm_config_production: "false"
+        run: npm ci
+      - name: Verify Redocly availability
+        run: ./node_modules/.bin/redocly --version
 
       - name: Run tests
         run: npm test
