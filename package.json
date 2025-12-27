@@ -8,9 +8,11 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "lint": "redocly lint openapi/openapi.yaml",
+    "openapi:lint": "redocly lint openapi/openapi.yaml",
+    "openapi:bundle": "redocly bundle openapi/openapi.yaml -o dist/openapi.bundle.yaml",
+    "lint": "npm run openapi:lint",
     "test": "npm run lint",
-    "build": "mkdir -p dist && redocly bundle openapi/openapi.yaml -o dist/openapi.bundle.yaml",
+    "build": "mkdir -p dist && npm run openapi:bundle",
     "start": "redocly preview-docs openapi/openapi.yaml --host 0.0.0.0 --port 8080"
   },
   "devDependencies": {
